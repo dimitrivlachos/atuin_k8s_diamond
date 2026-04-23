@@ -1,0 +1,95 @@
+# Atuin sync server for Diamond K8s (argus cluster)
+# Namespace: your fedid namespace (set as default first)
+#
+# Deploy PVC first: kubectl apply -f atuin_pvc.yaml
+# Then:            kubectl apply -f atuin_server.yaml
+#
+# After deploying:
+#   1. kubectl get service atuin  → note the EXTERNAL-IP
+#   2. atuin register -u <name> -e <email> --server http://<EXTERNAL-IP>:8888
+#   3. kubectl set env deployment/atuin ATUIN_OPEN_REGISTRATION=false
+
+# --- Atuin sync server ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atuin
+  labels:
+    app: atuin
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: atuin
+  template:
+    metadata:
+      labels:
+        app: atuin
+    spec:
+      securityContext:
+        runAsUser: 1225471
+        runAsGroup: 1225471
+      containers:
+        - name: atuin
+          image: ghcr.io/atuinsh/atuin:v18.15.0
+          args: ["server", "start"]
+          ports:
+            - containerPort: 8888
+          env:
+            - name: ATUIN_HOST
+              value: "0.0.0.0"
+            - name: ATUIN_PORT
+              value: "8888"
+            - name: ATUIN_OPEN_REGISTRATION
+              value: "true"
+            - name: ATUIN_DB_URI
+              value: "sqlite:///config/server.db"
+            - name: RUST_LOG
+              value: "info,atuin_server=debug"
+          volumeMounts:
+            - name: atuin-data
+              mountPath: /config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8888
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8888
+            initialDelaySeconds: 3
+            periodSeconds: 10
+      volumes:
+        - name: atuin-data
+          persistentVolumeClaim:
+            claimName: atuin-data
+
+---
+# --- LoadBalancer service ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: atuin
+  labels:
+    app: atuin
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  ports:
+    - name: http
+      port: 8888
+      protocol: TCP
+      targetPort: 8888
+  selector:
+    app: atuin

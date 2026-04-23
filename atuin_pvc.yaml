@@ -1,0 +1,19 @@
+# Atuin PVC — manage separately from the deployment to ensure data persistence.
+# Create ONCE before deploying atuin_server.yaml.
+#
+# Create:  kubectl apply -f atuin_pvc.yaml
+# Check:   kubectl get pvc atuin-data
+# Delete:  kubectl delete -f atuin_pvc.yaml  ← WARNING: destroys all data
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: atuin-data
+  labels:
+    app: atuin
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
