@@ -34,6 +34,7 @@ spec:
       containers:
         - name: atuin
           image: ghcr.io/atuinsh/atuin:18.15.2
+          imagePullPolicy: IfNotPresent
           args: ["start"]
           ports:
             - containerPort: 8888
