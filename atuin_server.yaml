@@ -33,7 +33,7 @@ spec:
         runAsGroup: 1225471
       containers:
         - name: atuin
-          image: ghcr.io/atuinsh/atuin:latest
+          image: ghcr.io/atuinsh/atuin:18.15.2
           args: ["start"]
           ports:
             - containerPort: 8888
