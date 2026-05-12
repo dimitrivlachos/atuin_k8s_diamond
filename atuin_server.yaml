@@ -1,8 +1,10 @@
 # Atuin sync server for Diamond K8s (argus cluster)
 # Namespace: your fedid namespace (set as default first)
 #
-# Deploy PVC first: kubectl apply -f atuin_pvc.yaml
-# Then:            kubectl apply -f atuin_server.yaml
+# Requires .env (see .env.example). Deploy with:
+#   set -a && source .env && set +a
+#   kubectl apply -f atuin_pvc.yaml
+#   envsubst < atuin_server.yaml | kubectl apply -f -
 #
 # After deploying:
 #   1. kubectl get service atuin  → note the EXTERNAL-IP
@@ -28,6 +30,15 @@ spec:
       labels:
         app: atuin
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values:
+                      - ${ATUIN_NODE_NAME}
       securityContext:
         runAsUser: 1225471
         runAsGroup: 1225471

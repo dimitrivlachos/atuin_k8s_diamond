@@ -4,6 +4,10 @@
 # Create:  kubectl apply -f atuin_pvc.yaml
 # Check:   kubectl get pvc atuin-data
 # Delete:  kubectl delete -f atuin_pvc.yaml  ← WARNING: destroys all data
+#
+# After creating, find which node the PV landed on and update the nodeAffinity
+# in atuin_server.yaml:
+#   kubectl get pv -l storageclass=db-nvme-storage -o wide
 
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -12,6 +16,7 @@ metadata:
   labels:
     app: atuin
 spec:
+  storageClassName: db-nvme-storage
   accessModes:
     - ReadWriteOnce
   resources:
