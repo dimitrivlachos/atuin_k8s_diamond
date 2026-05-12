@@ -1,13 +1,12 @@
 # Atuin PVC — manage separately from the deployment to ensure data persistence.
 # Create ONCE before deploying atuin_server.yaml.
 #
+# db-nvme-storage uses WaitForFirstConsumer — the PV is not provisioned until
+# the deployment is applied. Node placement is handled automatically.
+#
 # Create:  kubectl apply -f atuin_pvc.yaml
 # Check:   kubectl get pvc atuin-data
-# Delete:  kubectl delete -f atuin_pvc.yaml  ← WARNING: destroys all data
-#
-# After creating, find which node the PV landed on and update the nodeAffinity
-# in atuin_server.yaml:
-#   kubectl get pv -l storageclass=db-nvme-storage -o wide
+# Delete:  kubectl delete pvc atuin-data  ← WARNING: destroys all data
 
 apiVersion: v1
 kind: PersistentVolumeClaim

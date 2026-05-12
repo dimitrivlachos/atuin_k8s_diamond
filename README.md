@@ -6,50 +6,23 @@ Deploys [Atuin](https://github.com/atuinsh/atuin) as a personal shell history sy
 
 - `module load argus` done and `kubectl` in your PATH
 - Default namespace set to your fedid: `kubectl config set-context --current --namespace=rto52325`
-- `envsubst` available (`gettext` package on most distros)
-
-## Configuration
-
-Copy `.env.example` to `.env` and fill in your values:
-
-```bash
-cp .env.example .env
-```
-
-`.env` is gitignored and must not be committed.
 
 ## Deploy
 
-### 1. Source your environment
+### 1. Create the PVC
 
-```bash
-set -a && source .env && set +a
-```
+Create the PVC once and keep it separate from the server deployment. This ensures the server can be redeployed without touching your data.
 
-### 2. Create the PVC
-
-Create the PVC once and keep it separate from the server deployment. This ensures `kubectl delete -f atuin_server.yaml` never touches your data:
+The `db-nvme-storage` class uses `WaitForFirstConsumer` — the PVC will stay `Pending` until the deployment is applied, at which point Kubernetes provisions the NVMe PV and places the pod on the same node automatically.
 
 ```bash
 kubectl apply -f atuin_pvc.yaml
-kubectl get pvc atuin-data
-# Wait until STATUS = Bound before continuing
 ```
 
-### 3. Find the node and update `.env`
-
-The PVC will be bound to a specific NVMe node. Find it and set `ATUIN_NODE_NAME` in `.env`:
+### 2. Deploy the server
 
 ```bash
-kubectl get pv -l storageclass=db-nvme-storage -o wide
-# Note the NODE column, update ATUIN_NODE_NAME in .env, then re-source it
-set -a && source .env && set +a
-```
-
-### 4. Deploy the server
-
-```bash
-envsubst < atuin_server.yaml | kubectl apply -f -
+kubectl apply -f atuin_server.yaml
 ```
 
 Wait for the pod to be ready:
